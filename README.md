@@ -185,11 +185,15 @@ Three of the 41 `HIGH`-impact variants were selected to demonstrate how computat
 
 **ABHD12** — read evidence is unambiguous (27/27 reads support the insertion). SnpEff reports the frameshift at position 426 of a 426-residue transcript (`XM_047440087.1`); UniProt's canonical isoform is 398 residues, so this figure reflects the specific annotated transcript rather than a single agreed-upon protein length — ABHD12 has multiple documented isoforms of different lengths. Because the predicted frameshift occurs at or near the final codon of the annotated transcript, its biological consequence is less straightforward than the generic `HIGH` label suggests. This illustrates why automated impact categories should not be treated as definitive functional conclusions.
 
+![](results/igv_abhd12.png)
+
 **SIRPB1** — the three adjacent calls have identical supporting-read statistics (AD, DP, QD, MQ), suggesting they may represent different VCF representations of the same underlying local haplotype or complex event, rather than three independent mutations. This illustrates why adjacent variant calls are sometimes better interpreted together than independently.
+
+![](results/igv_sirpb1.png)
 
 **DZANK1** — a splice-acceptor-site variant that alters the canonical splice-acceptor sequence and is predicted to disrupt normal splicing. Strong, high-quality evidence (QD 32.8, mapping quality 60). The variant was annotated at the corresponding splice-acceptor position across 15 transcripts in SnpEff's RefSeq-based database for this gene — this reflects the annotation database used, not independent experimental confirmation.
 
-*(Add saved IGV screenshots to `results/igv_abhd12.png`, `results/igv_sirpb1.png`, `results/igv_dzank1.png` and reference them here.)*
+![](results/igv_dzank1.png)
 
 ---
 
