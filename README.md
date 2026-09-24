@@ -1,6 +1,6 @@
 # NA12878 Chromosome 20 Variant-Calling Pipeline
 
-An end-to-end human germline short-variant calling workflow build to  deeply understand how a sequenceing data move from raw sequencing reads, variant calls, benchmarking, and functional annotation.
+An end-to-end human germline short-variant calling workflow built to  deeply understand how a sequencing data move from raw sequencing reads, variant calls, benchmarking, and functional annotation.
 
 This project uses real NA12878 (HG001) 30× whole-genome sequencing data and focuses on chromosome 20 to keep computation manageable on limited hardware while retaining the complexity of a real human chromosome.
 
@@ -68,18 +68,9 @@ Through the `bioconda` channel, each tool was gradually installed, one for each 
 
 The retrieved reads were name-sorted and transformed back into raw paired FASTQ (`samtools fastq`), eliminating all alignment information and retaining simply sequence + quality—the actual beginning point for this project's own, independent pipeline—instead of reusing NYGC's existing alignment. Reads that were unpaired or singular were eliminated.
 
-Verified by direct line-count inspection: (17,528,783 total − 378,597 unmatched) ÷ 2 = **8,575,093**GATK `HaplotypeCaller`** was used in place of a simpler position-by-position caller (e.g. `bcftools call`): it locally reassembles small regions of DNA directly from the reads rather than tallying mismatches independently, giving substantially more accurate results — particularly for indels — and is the field's accepted standard for benchmarking. GATK's Java heap was explicitly capped (`-Xmx2g`) after checking available system memory (3.2 GB), avoiding the JVM's default loose allocation on constrained hardware.
+Verified: (17,528,783 total − 378,597 unmatched) ÷ 2 = **8,575,093 reads** in each of `na12878_chr20_R1.fastq` / `_R2.fastq` (2.8 GB each), confirmed by direct line-count inspection.
 
-Raw calling produced **135,371 variants**. Variants were split by type (`SelectVariants`) before filtering, since SNPs and indels have different error characteristics and GATK's best-practice hard-filter thresholds differ accordingly:
-
-- **SNPs**: 113,174 total → **106,536 PASS (94.1%)**. Filters: `QD<2.0`, `FS>60.0`, `MQ<40.0`, `MQRankSum<-12.5`, `ReadPosRankSum<-8.0`. Mapping quality (`MQ40`) was the single most common failure reason.
-- **Indels**: 22,002 total → **21,646 PASS (98.4%)**. Filters: `QD<2.0`, `FS>200.0`, `ReadPosRankSum<-20.0` (looser than SNP thresholds, reflecting indels' inherently noisier alignment signal). Only `QD2` ever triggered.
-
-Filtering tags variants (FILTER column); it does not delete records — confirmed by identical record counts before and after. SNP:indel ratio (83.6% : 16.4%) matches the well-established ~5:1 pattern in real human variation.
-
-Filtered SNP and indel sets were merged (`MergeVcfs`) into `na12878_chr20.filtered.vcf.gz`: **135,176 records**, exactly matching 113,174 + 22,002. This is 195 fewer than the raw 135,371 total; confirmed via `SelectVariants --select-type-to-include MIXED --select-type-to-include MNP` that exactly 195 raw records are `MIXED`/`MNP`-type sites (positions with both a SNP-like and indel-like allele, or multiple adjacent changed bases) — correctly excluded by both the SNP-only and indel-only selections, since they belong to neither category cleanly.93 reads** in each of `na12878_chr20_R1.fastq` / `_R2.fastq` (2.8 GB each).
-
-*Note: The term "singleton" is used differently by `samtools fastq`' (mate absent from this file) and `flagstat`' (mate failed to map anywhere).*
+*Note: `samtools fastq`'s notion of "singleton" (mate absent from this file) differs from `flagstat`'s (mate failed to map anywhere) — the two tools use the same term for different things.*
 
 ### 3. Quality control and trimming
 
@@ -130,7 +121,7 @@ Comparison was run with `hap.py`, using RTG's `vcfeval` as the comparison engine
 
 ### 9. Annotation
 
-**`SnpEff`** (database `GRCh38.p14`, RefSeq transcripts) annotated every variant with gene, region type, and predicted severity. *(SnpEff required a newer Java runtime than GATK's — resolved by installing it into a separate `snpeff_env` with `openjdk=21`. An initial `OutOfMemoryError` loading the whole-genome gene database was resolved by explicitly raising the Java heap, first to 2 GB — insufficient — then to 3 GB, which succeeded.)*
+**`SnpEff`** (database `GRCh38.p14`, RefSeq transcripts) annotated the 135,176 retained variant records with gene, region type, and predicted severity (`MODIFIER`/`LOW`/`MODERATE`/`HIGH`). *(SnpEff requires a newer Java runtime than GATK's — installed into a separate `snpeff_env` with `openjdk=21`, with the Java heap sized at 3 GB to load the whole-genome gene database.)*
 
 SnpEff's impact categories are computational predictions based on variant-consequence models; they are not experimental measurements of biological effect (see [Manual IGV review](#manual-igv-review-of-selected-high-impact-calls) below for a concrete example of why this distinction matters).
 
@@ -247,13 +238,13 @@ conda create -n snpeff_env -c bioconda -c conda-forge snpeff openjdk=21 -y
 | bwa | 0.7.19-r1273 |
 | FastQC | 0.12.1 |
 | fastp | 1.3.6 |
-| GATK | 4.3.0.0 |
-| bcftools | not explicitly recorded during this project |
+| GATK | 4.3.0
 | hap.py | 0.3.15 |
+| bcftools | not explicitly recorded |
 | RTG Tools | 3.13 |
 | SnpEff | 5.4c |
 | OpenJDK (SnpEff env) | 21 |
-| IGV | web app (igv.org/app), version not pinned |
+| IGV | web app (igv.org/app)|
 
 Run `scripts/run_pipeline.sh` stage by stage (it is written for review and reproduction, not unattended execution — several stages require switching conda environments, noted inline). `scripts/plot_results.py` regenerates the result figures from the numbers in this README.
 
